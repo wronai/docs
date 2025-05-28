@@ -718,5 +718,711 @@ def create_wronai_model(model_size: str = "mini") -> WronAIModel:
     print(f"  📊 Total parameters: {total_params:,}")
     print(f"  🎯 Trainable parameters: {trainable_params:,}")
     print(f"  💾 Estimated size (FP16): {total_params * 2 / 1024**2:.1f} MB")
-    print(f"  🏗️ Architecture: {config
+    print(f"  🏗️ Architecture: {config.n_layers}L-{config.d_model}H-{config.n_heads}A")
+    print(f"  🔄 GQA Ratio: {config.n_heads}:{config.n_kv_heads}")
+    
+    return model
 ```
+
+---
+
+## 📊 Źródła Danych dla ARM/Edge Computing {#data-sources}
+
+### Specjalistyczne Datasety dla Edge/ARM
+
+#### 1. Dokumentacja ARM i Embedded Systems
+```python
+def collect_arm_embedded_data():
+    """Zbieranie danych związanych z ARM i embedded systems"""
+    
+    sources = {
+        # Oficjalne dokumentacje
+        "arm_docs": [
+            "ARM Architecture Reference Manual",
+            "Cortex-A Series Programming Guide", 
+            "NEON Programmer's Guide",
+            "ARM Assembly Language Documentation"
+        ],
+        
+        # Raspberry Pi specific
+        "rpi_docs": [
+            "https://www.raspberrypi.org/documentation/",
+            "RPi GPIO Programming",
+            "BCM2835 ARM Peripherals Guide",
+            "VideoCore IV Programming"
+        ],
+        
+        # Performance optimization
+        "optimization": [
+            "ARM NEON optimization guides",
+            "Cache optimization for ARM",
+            "Power management ARM Cortex",
+            "Thermal management embedded systems"
+        ],
+        
+        # Real-world projects
+        "projects": [
+            "GitHub repos tagged: raspberry-pi, arm, embedded",
+            "IoT project documentation",
+            "Edge computing case studies",
+            "ARM assembly optimizations"
+        ]
+    }
+    
+    return sources
+
+# Kod do automatycznego scraping dokumentacji
+import requests
+from bs4 import BeautifulSoup
+import time
+
+class ARMDocScraper:
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (compatible; WronAI-DataCollector/1.0)'
+        })
+    
+    def scrape_arm_official_docs(self):
+        """Scraping oficjalnej dokumentacji ARM"""
+        base_urls = [
+            "https://developer.arm.com/documentation/",
+            "https://developer.arm.com/tools-and-software/",
+        ]
+        
+        collected_docs = []
+        
+        for url in base_urls:
+            try:
+                response = self.session.get(url)
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Extract documentation links
+                doc_links = soup.find_all('a', href=True)
+                for link in doc_links:
+                    if any(keyword in link.get('href', '').lower() 
+                          for keyword in ['cortex', 'neon', 'assembly', 'optimization']):
+                        collected_docs.append({
+                            'url': link['href'],
+                            'title': link.text.strip(),
+                            'source': 'arm_official'
+                        })
+                
+                time.sleep(1)  # Rate limiting
+                
+            except Exception as e:
+                print(f"Error scraping {url}: {e}")
+        
+        return collected_docs
+```
+
+#### 2. Kod Źródłowy Zoptymalizowany dla ARM
+```python
+def collect_arm_optimized_code():
+    """Zbieranie kodu zoptymalizowanego dla ARM"""
+    
+    # GitHub repositories z ARM optimizations
+    arm_repos = [
+        # SIMD/NEON libraries
+        "ARM-software/ComputeLibrary",
+        "libjpeg-turbo/libjpeg-turbo",  # NEON optimizations
+        "madler/zlib",                  # ARM assembly
+        "opencv/opencv",                # ARM NEON optimizations
+        
+        # Embedded/IoT frameworks
+        "ARMmbed/mbed-os",
+        "zephyrproject-rtos/zephyr",
+        "espressif/esp-idf",
+        
+        # Machine Learning for ARM
+        "tensorflow/tensorflow",        # TensorFlow Lite
+        "pytorch/pytorch",              # Mobile optimizations
+        "apache/tvm",                   # Tensor compiler
+        "ARM-software/ML-zoo",
+        
+        # System programming
+        "torvalds/linux",               # ARM kernel code
+        "u-boot/u-boot",               # Bootloader
+        "buildroot/buildroot",         # Embedded Linux
+    ]
+    
+    code_patterns = [
+        # ARM Assembly patterns
+        r'\.arm\s+|\.thumb\s+',
+        r'vld1\.|vst1\.|vadd\.|vmul\.',  # NEON instructions
+        r'#ifdef\s+__ARM_NEON',
+        r'arm_neon\.h',
+        
+        # Performance optimizations
+        r'__builtin_prefetch',
+        r'likely\(|unlikely\(',
+        r'__attribute__.*aligned',
+        r'cache_line_size',
+        
+        # ARM-specific defines
+        r'CONFIG_ARM|ARM_ARCH',
+        r'__aarch64__|__arm__',
+        r'cortex[_-]a\d+',
+    ]
+    
+    return arm_repos, code_patterns
+
+# Implementacja data collector
+from datasets import Dataset
+import subprocess
+import os
+import fnmatch
+
+class ARMCodeCollector:
+    def __init__(self, output_dir="arm_code_data"):
+        self.output_dir = output_dir
+        os.makedirs(output_dir, exist_ok=True)
+    
+    def clone_and_extract(self, repo_url, target_extensions=None):
+        """Clone repo i extract relevant files"""
+        if target_extensions is None:
+            target_extensions = ['.c', '.cpp', '.h', '.hpp', '.s', '.S', '.py', '.go']
+        
+        repo_name = repo_url.split('/')[-1]
+        repo_path = os.path.join(self.output_dir, repo_name)
+        
+        try:
+            # Clone repository (shallow)
+            subprocess.run([
+                'git', 'clone', '--depth', '1', 
+                f'https://github.com/{repo_url}', repo_path
+            ], check=True, capture_output=True)
+            
+            # Extract relevant files
+            code_files = []
+            for root, dirs, files in os.walk(repo_path):
+                # Skip .git and build directories
+                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['build', 'obj']]
+                
+                for file in files:
+                    if any(file.endswith(ext) for ext in target_extensions):
+                        file_path = os.path.join(root, file)
+                        try:
+                            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                content = f.read()
+                                
+                            # Check if ARM-related
+                            if self.is_arm_related(content):
+                                code_files.append({
+                                    'repo': repo_url,
+                                    'file_path': file_path.replace(repo_path, ''),
+                                    'content': content,
+                                    'language': self.detect_language(file),
+                                    'size': len(content)
+                                })
+                        except Exception as e:
+                            continue
+            
+            # Cleanup repo
+            subprocess.run(['rm', '-rf', repo_path], check=True)
+            
+            return code_files
+            
+        except Exception as e:
+            print(f"Error processing {repo_url}: {e}")
+            return []
+    
+    def is_arm_related(self, content):
+        """Check if code is ARM-related"""
+        arm_indicators = [
+            'arm', 'neon', 'cortex', 'aarch64', '__arm__',
+            'vld1', 'vst1', 'vadd', 'vmul',  # NEON
+            'raspberry', 'rpi', 'bcm2835',   # RPi specific
+            'embedded', 'microcontroller',
+            '__builtin_prefetch', 'cache_line'
+        ]
+        
+        content_lower = content.lower()
+        return any(indicator in content_lower for indicator in arm_indicators)
+    
+    def detect_language(self, filename):
+        """Detect programming language"""
+        lang_map = {
+            '.c': 'c', '.h': 'c',
+            '.cpp': 'cpp', '.cc': 'cpp', '.cxx': 'cpp',
+            '.hpp': 'cpp', '.hxx': 'cpp',
+            '.py': 'python',
+            '.go': 'go',
+            '.s': 'assembly', '.S': 'assembly',
+            '.sh': 'bash', '.bash': 'bash',
+            '.sql': 'sql',
+            '.rs': 'rust',
+            '.js': 'javascript',
+            '.ts': 'typescript'
+        }
+        
+        ext = os.path.splitext(filename)[1].lower()
+        return lang_map.get(ext, 'unknown')
+```
+
+#### 3. DSL i Domain-Specific Languages
+```python
+def collect_dsl_data():
+    """Zbieranie danych DSL używanych w edge computing"""
+    
+    dsl_sources = {
+        # Configuration DSLs
+        "config_dsls": [
+            "YAML configurations (Docker, K8s, CI/CD)",
+            "TOML configs (Rust, Hugo)",
+            "JSON configs (package.json, tsconfig)",
+            "INI files (systemd, git config)",
+            "HCL (Terraform, Packer)",
+        ],
+        
+        # Build & Deploy DSLs
+        "build_dsls": [
+            "Dockerfile instructions",
+            "Makefile recipes", 
+            "CMakeLists.txt",
+            "Bazel BUILD files",
+            "GitHub Actions YAML",
+            "Ansible playbooks",
+        ],
+        
+        # Query DSLs
+        "query_dsls": [
+            "SQL dialects (PostgreSQL, MySQL, SQLite)",
+            "PromQL (Prometheus queries)",
+            "JQ expressions (JSON processing)",
+            "XPath expressions",
+            "GraphQL schemas and queries",
+        ],
+        
+        # Hardware Description
+        "hardware_dsls": [
+            "Device Tree Source (.dts)",
+            "SystemVerilog/Verilog",
+            "VHDL",
+            "OpenCL kernels",
+            "CUDA kernels",
+        ],
+        
+        # Embedded-specific
+        "embedded_dsls": [
+            "Zephyr device tree overlays",
+            "PlatformIO configurations",
+            "Arduino IDE configurations",
+            "FreeRTOS config files",
+            "Yocto recipes (.bb files)",
+        ]
+    }
+    
+    return dsl_sources
+
+# Collector implementation for DSLs
+class DSLDataCollector:
+    def __init__(self):
+        self.dsl_patterns = {
+            'dockerfile': r'FROM\s+|RUN\s+|COPY\s+|ADD\s+',
+            'makefile': r'^[A-Za-z][^:]*:\s*$|^\t',
+            'cmake': r'cmake_minimum_required|add_executable|target_link_libraries',
+            'yaml': r'^---$|^\s*[-\w]+:\s*,
+            'sql': r'SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP',
+            'devicetree': r'/dts-v1/|compatible\s*=|reg\s*=',
+            'promql': r'rate\(|increase\(|histogram_quantile',
+            'jq': r'\.\w+|\[\]|\|',
+        }
+    
+    def extract_dsl_samples(self, text, dsl_type):
+        """Extract DSL code samples from text"""
+        import re
+        
+        if dsl_type not in self.dsl_patterns:
+            return []
+        
+        pattern = self.dsl_patterns[dsl_type]
+        matches = []
+        
+        lines = text.split('\n')
+        current_block = []
+        in_block = False
+        
+        for line in lines:
+            if re.search(pattern, line, re.IGNORECASE):
+                if not in_block:
+                    in_block = True
+                    current_block = [line]
+                else:
+                    current_block.append(line)
+            elif in_block:
+                if line.strip() == '' or line.startswith(' ') or line.startswith('\t'):
+                    current_block.append(line)
+                else:
+                    # End of block
+                    if len(current_block) > 2:  # Minimum viable block
+                        matches.append('\n'.join(current_block))
+                    current_block = []
+                    in_block = False
+        
+        # Handle final block
+        if in_block and len(current_block) > 2:
+            matches.append('\n'.join(current_block))
+        
+        return matches
+```
+
+### Krok 6: Training Pipeline z Optymalizacjami
+
+```python
+import torch
+import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
+from torch.cuda.amp import autocast, GradScaler
+import wandb
+from tqdm import tqdm
+import math
+import os
+
+class WronDataset(Dataset):
+    """Dataset class for WronAI training"""
+    def __init__(self, tokenized_texts, max_length=2048):
+        self.texts = tokenized_texts
+        self.max_length = max_length
+    
+    def __len__(self):
+        return len(self.texts)
+    
+    def __getitem__(self, idx):
+        tokens = self.texts[idx]
+        
+        # Truncate if too long
+        if len(tokens) > self.max_length:
+            tokens = tokens[:self.max_length]
+        
+        # Convert to tensors
+        input_ids = torch.tensor(tokens[:-1], dtype=torch.long)
+        labels = torch.tensor(tokens[1:], dtype=torch.long)
+        
+        return {
+            'input_ids': input_ids,
+            'labels': labels
+        }
+
+def collate_fn(batch):
+    """Custom collate function with padding"""
+    max_len = max(len(item['input_ids']) for item in batch)
+    
+    input_ids = []
+    labels = []
+    
+    for item in batch:
+        # Pad sequences
+        pad_len = max_len - len(item['input_ids'])
+        
+        padded_input = F.pad(item['input_ids'], (0, pad_len), value=0)
+        padded_labels = F.pad(item['labels'], (0, pad_len), value=-100)  # -100 ignored in loss
+        
+        input_ids.append(padded_input)
+        labels.append(padded_labels)
+    
+    return {
+        'input_ids': torch.stack(input_ids),
+        'labels': torch.stack(labels)
+    }
+
+class WronTrainer:
+    """Advanced trainer for WronAI with edge optimizations"""
+    
+    def __init__(self, model, tokenizer, config):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.config = config
+        
+        # Optimizer with weight decay
+        self.optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=config.learning_rate,
+            betas=(0.9, 0.95),
+            weight_decay=config.weight_decay,
+            eps=1e-8
+        )
+        
+        # Learning rate scheduler
+        self.scheduler = self.create_scheduler()
+        
+        # Mixed precision scaler
+        self.scaler = GradScaler() if config.use_amp else None
+        
+        # Monitoring
+        self.step = 0
+        self.best_loss = float('inf')
+        
+        # Initialize wandb
+        if config.use_wandb:
+            wandb.init(
+                project="wronai-training",
+                config=vars(config),
+                name=f"wronai-{config.model_size}-{config.run_name}"
+            )
+    
+    def create_scheduler(self):
+        """Create learning rate scheduler"""
+        if self.config.scheduler_type == 'cosine':
+            return torch.optim.lr_scheduler.CosineAnnealingLR(
+                self.optimizer,
+                T_max=self.config.max_steps,
+                eta_min=self.config.learning_rate * 0.1
+            )
+        elif self.config.scheduler_type == 'linear_warmup':
+            return self.create_linear_warmup_scheduler()
+        else:
+            return torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1000, gamma=0.95)
+    
+    def create_linear_warmup_scheduler(self):
+        """Create linear warmup + cosine decay scheduler"""
+        def lr_lambda(step):
+            if step < self.config.warmup_steps:
+                return step / self.config.warmup_steps
+            else:
+                progress = (step - self.config.warmup_steps) / (self.config.max_steps - self.config.warmup_steps)
+                return 0.5 * (1 + math.cos(math.pi * progress))
+        
+        return torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
+    
+    def train_step(self, batch):
+        """Single training step with optimizations"""
+        self.model.train()
+        
+        input_ids = batch['input_ids'].to(self.config.device)
+        labels = batch['labels'].to(self.config.device)
+        
+        # Forward pass with optional mixed precision
+        if self.config.use_amp and self.scaler:
+            with autocast():
+                logits, _ = self.model(input_ids)
+                loss = F.cross_entropy(
+                    logits.view(-1, logits.size(-1)),
+                    labels.view(-1),
+                    ignore_index=-100
+                )
+        else:
+            logits, _ = self.model(input_ids)
+            loss = F.cross_entropy(
+                logits.view(-1, logits.size(-1)),
+                labels.view(-1),
+                ignore_index=-100
+            )
+        
+        # Backward pass
+        if self.config.use_amp and self.scaler:
+            self.scaler.scale(loss).backward()
+            
+            # Gradient clipping
+            self.scaler.unscale_(self.optimizer)
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.max_grad_norm)
+            
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.max_grad_norm)
+            self.optimizer.step()
+        
+        self.scheduler.step()
+        self.optimizer.zero_grad()
+        
+        return loss.item()
+    
+    def train(self, train_loader, eval_loader=None):
+        """Main training loop"""
+        print(f"🚀 Starting training for {self.config.max_steps} steps...")
+        
+        progress_bar = tqdm(total=self.config.max_steps, desc="Training")
+        
+        while self.step < self.config.max_steps:
+            epoch_loss = 0
+            num_batches = 0
+            
+            for batch in train_loader:
+                loss = self.train_step(batch)
+                epoch_loss += loss
+                num_batches += 1
+                self.step += 1
+                
+                # Logging
+                if self.step % self.config.log_interval == 0:
+                    avg_loss = epoch_loss / num_batches
+                    lr = self.scheduler.get_last_lr()[0]
+                    
+                    progress_bar.set_postfix({
+                        'loss': f'{avg_loss:.4f}',
+                        'lr': f'{lr:.2e}',
+                        'step': self.step
+                    })
+                    
+                    if self.config.use_wandb:
+                        wandb.log({
+                            'train_loss': avg_loss,
+                            'learning_rate': lr,
+                            'step': self.step
+                        })
+                
+                # Evaluation
+                if eval_loader and self.step % self.config.eval_interval == 0:
+                    eval_loss = self.evaluate(eval_loader)
+                    print(f"\n📊 Step {self.step} - Eval Loss: {eval_loss:.4f}")
+                    
+                    if self.config.use_wandb:
+                        wandb.log({'eval_loss': eval_loss, 'step': self.step})
+                    
+                    # Save best model
+                    if eval_loss < self.best_loss:
+                        self.best_loss = eval_loss
+                        self.save_model("best_model")
+                
+                # Save checkpoint
+                if self.step % self.config.save_interval == 0:
+                    self.save_model(f"checkpoint_step_{self.step}")
+                
+                progress_bar.update(1)
+                
+                if self.step >= self.config.max_steps:
+                    break
+        
+        progress_bar.close()
+        print("✅ Training completed!")
+        
+        # Final save
+        self.save_model("final_model")
+    
+    def evaluate(self, eval_loader):
+        """Evaluation loop"""
+        self.model.eval()
+        total_loss = 0
+        num_batches = 0
+        
+        with torch.no_grad():
+            for batch in eval_loader:
+                input_ids = batch['input_ids'].to(self.config.device)
+                labels = batch['labels'].to(self.config.device)
+                
+                if self.config.use_amp:
+                    with autocast():
+                        logits, _ = self.model(input_ids)
+                        loss = F.cross_entropy(
+                            logits.view(-1, logits.size(-1)),
+                            labels.view(-1),
+                            ignore_index=-100
+                        )
+                else:
+                    logits, _ = self.model(input_ids)
+                    loss = F.cross_entropy(
+                        logits.view(-1, logits.size(-1)),
+                        labels.view(-1),
+                        ignore_index=-100
+                    )
+                
+                total_loss += loss.item()
+                num_batches += 1
+        
+        self.model.train()
+        return total_loss / num_batches
+    
+    def save_model(self, name):
+        """Save model checkpoint"""
+        save_dir = os.path.join(self.config.output_dir, name)
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Save model state
+        torch.save({
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
+            'step': self.step,
+            'best_loss': self.best_loss,
+            'config': self.config
+        }, os.path.join(save_dir, 'pytorch_model.pt'))
+        
+        # Save config
+        with open(os.path.join(save_dir, 'config.json'), 'w') as f:
+            import json
+            json.dump(vars(self.config), f, indent=2)
+        
+        print(f"💾 Model saved to {save_dir}")
+
+class TrainingConfig:
+    """Training configuration class"""
+    def __init__(self):
+        # Model config
+        self.model_size = "mini"
+        self.vocab_size = 32000
+        
+        # Training hyperparameters
+        self.learning_rate = 3e-4
+        self.weight_decay = 0.1
+        self.max_grad_norm = 1.0
+        self.batch_size = 8
+        self.gradient_accumulation_steps = 4
+        self.max_steps = 100000
+        
+        # Scheduler
+        self.scheduler_type = "linear_warmup"
+        self.warmup_steps = 2000
+        
+        # Mixed precision
+        self.use_amp = True
+        
+        # Logging and saving
+        self.log_interval = 100
+        self.eval_interval = 2000
+        self.save_interval = 5000
+        self.use_wandb = True
+        self.run_name = "v1"
+        
+        # Paths
+        self.output_dir = "./wronai_output"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Training execution
+def run_training():
+    """Execute full training pipeline"""
+    
+    # Configuration
+    config = TrainingConfig()
+    
+    # Create model
+    model = create_wronai_model(config.model_size)
+    model.to(config.device)
+    
+    # Load tokenizer (placeholder - you'd load your trained tokenizer)
+    # tokenizer = spm.SentencePieceProcessor()
+    # tokenizer.load('wronai_tokenizer.model')
+    
+    # Prepare datasets (placeholder - you'd prepare your actual data)
+    # train_dataset = WronDataset(train_texts)
+    # eval_dataset = WronDataset(eval_texts)
+    
+    # train_loader = DataLoader(
+    #     train_dataset, 
+    #     batch_size=config.batch_size,
+    #     shuffle=True,
+    #     collate_fn=collate_fn,
+    #     num_workers=4
+    # )
+    
+    # eval_loader = DataLoader(
+    #     eval_dataset,
+    #     batch_size=config.batch_size,
+    #     shuffle=False,
+    #     collate_fn=collate_fn,
+    #     num_workers=4
+    # )
+    
+    # Initialize trainer
+    # trainer = WronTrainer(model, tokenizer, config)
+    
+    # Start training
+    # trainer.train(train_loader, eval_loader)
+    
+    print("🎯 Training pipeline setup complete!")
+
+if __name__ == "__main__":
+    run_training()
+```
+
